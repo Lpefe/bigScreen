@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <base id="base" href="${base}">
+    <meta charset="UTF-8">
+    <title>注册</title>
+    <META NAME="save" CONTENT="history">
+    <link rel="stylesheet" type="text/css" href="../layui/login/css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../layui/login/css/demo.css" />
+    <!--必要样式-->
+    <link rel="stylesheet" type="text/css" href="../layui/login/css/component.css" />
+    <link rel="stylesheet" type="text/css" href="../layui/css/layui.css" />
+    <link rel="Shortcut Icon" href="../layui/images/logo.png" />
+    <script type="text/javascript" src="../js/jquery-1.10.2.js"></script>
+    <script type="text/javascript" src="../layui/layui.js"></script>
+</head>
+<style>
+:-webkit-autofill {
+  -webkit-text-fill-color: #fff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+</style>
+<body>
+    <div class="container demo-1">
+        <div class="content">
+            <div id="large-header" class="large-header">
+                <canvas id="demo-canvas"></canvas>
+                <div class="logo_box">
+                    <h3>注册账号</h3>
+                    <form action="#" name="f" method="post">
+                            <!-- <div class="input_outer">
+                                <span class="u_user"></span>
+                                <input autocomplete="off" name="test" class="text" style="color: #FFFFFF !important"
+                                    type="text" placeholder="请输入账户">
+                            </div>
+                            <div class="input_outer">
+                                <span class="us_uer"></span>
+                                <input autocomplete="off" name="test2" class="text" style="color: #FFFFFF !important; position:absolute; z-index:100;"
+                                    value="" type="password" placeholder="请输入密码">
+                            </div> -->
+                        <div class="input_outer">
+                            <span class="email"></span>
+                            <input autocomplete="off" name="registemail" class="text" style="color: #FFFFFF !important"
+                                type="text" placeholder="请输入邮箱">
+                        </div>
+                        <div class="input_outer">
+                            <span class="u_user"></span>
+                            <input autocomplete="off" name="registusername" class="text" style="color: #FFFFFF !important"
+                                type="text" placeholder="请输入账户">
+                        </div>
+                        <div class="input_outer">
+                            <span class="us_uer"></span>
+                            <input autocomplete="off" name="registpassword" class="text" style="color: #FFFFFF !important; position:absolute; z-index:100;"
+                                value="" type="text" placeholder="请输入密码">
+                        </div>
+                        <div class="mb2"><a id="sub2" lay-filter="sub" class="act-but submit" href="javascript:;" style="color: #FFFFFF">注册</a></div>
+                        <div class="mb2"><a id="sub" lay-filter="sub" class="act-but submit" href="./login.html" style="color: #FFFFFF">返回</a></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div><!-- /container -->
+    <script src="../layui/login/js/TweenLite.min.js"></script>
+    <script src="../layui/login/js/EasePack.min.js"></script>
+    <script src="../layui/login/js/rAF.js"></script>
+    <script src="../layui/login/js/demo-1.js"></script>
+    <script src="../js/target.js"></script>
+
+</body>
+<script>
+    var regists = "http://" + target + "/monitor/regist/"
+
+        $("input[name='registpassword']").attr("type", "text").val("").on("focus", function () {
+                $(this).attr("type", "password");
+            });
+    //加载弹出层组件
+    layui.use('layer', function () {
+        $(" input[ name='registusername' ] ").val() == "";
+        $(" input[ name='registpassword' ] ").val() == "";
+        $(" input[ name='registemail' ] ").val() == "";
+        var layer = layui.layer;
+
+        //注册的点击事件
+        $("#sub2").on("click", function () {
+            regist();
+        })
+
+        $("body").keydown(function () {
+            if (event.keyCode == "13") {
+                regist();
+            }
+        })
+        var regUsername = /^[\S]{6,12}$/
+        var tegEmail = /^[A-Za-z\d]+([-_.][A-Za-z\d]+)*@([A-Za-z\d]+[-.])+[A-Za-z\d]{2,4}$/
+        //登录函数
+        function regist() {
+            var username = $(" input[ name='registusername' ] ").val();
+            var password = $(" input[ name='registpassword' ] ").val();
+            var email = $(" input[ name='registemail' ] ").val();
+            console.log(username)
+            console.log(tegEmail.test(email))
+            console.log(regUsername.test(password))
+            console.log(regUsername.test(username))
+            if(!tegEmail.test(email)){
+                layer.msg('邮箱格式不正确', {
+                icon: 5,
+                time: 5000
+              }); //失败的表情
+            }else if(!regUsername.test(username)){
+                layer.msg('账号必须6到12位，且不能出现空格', {
+                icon: 5,
+                time: 5000
+              }); //失败的表情
+            }else if(!regUsername.test(password)){
+                layer.msg('密码必须6到12位，且不能出现空格', {
+                icon: 5,
+                time: 5000
+              }); //失败的表情
+            }else{
+                fetch(regists, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        "username": username,
+                        "password": password,
+                        "email": email,
+                    })
+                }).then(function (data) {
+                    data.json().then(data => {
+                        if (data.success) {
+                            window.location = "./login.html";
+                        } else {
+                            layer.msg(data.message, {
+                                icon: 5,
+                                time: 5000
+                            }); //失败的表情
+                        }
+                    })
+                })
+            }
+        }
+    })
+</script>
+
+</html>

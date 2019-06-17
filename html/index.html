@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>大屏</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+    <link rel="Shortcut Icon" href="../layui/images/logo.png" />
+</head>
+<link rel="stylesheet" href="../layui/css/public.css">
+<style>
+    .img {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    #map {
+        float: left;
+    }
+
+    #button {
+        width: 120px;
+        height: 800px;
+        position: fixed;
+        right: 20px;
+        top: 70px;
+    }
+    .btn {
+        background: #143B6E
+    }
+
+    .active {
+        background: #31A0FE
+    }
+    .mapTop{
+        width: 100%;
+        position: fixed;
+        top: 0;
+        z-index: 9999;
+    }
+</style>
+
+<body>
+    <div class="mapTop">
+        <ul class="layui-nav mynav" lay-filter="">
+            <div>SD-WAN 监控平台</div>
+            <li class="layui-nav-item layui-this"><a href="./index.html">地图</a></li>
+            <li class="layui-nav-item"><a href="./host.html">设备</a></li>
+            <li class="layui-nav-item"><a href="./grp.html">组</a></li>
+            <li class="layui-nav-item"><a href="./ping_cfg.html">模板</a></li>
+            <li class="layui-nav-item" style="float:right; margin-right: 35px;" lay-unselect="">
+                <a id="navname" href="javascript:;">我</a>
+                <dl class="layui-nav-child">
+                  <dd><a href="javascript:;" id="changepwd">修改密码</a></dd>
+                  <dd><a href="javascript:;" id="leave">退出登录</a></dd>
+                </dl>
+            </li>
+        </ul>
+    </div>
+
+    <div style=" background: #16234e ;" id="map">
+
+    </div>
+    <div id="button"></div>
+    <script src="../layui/layui.js" charset="utf-8"></script>
+
+    <script src="../layui/echarts.min.js"></script>
+    <script src="../layui/world.js"></script>
+    <script src="../js/target.js"></script>
+    <script src="../js/jquery-1.10.2.js"></script>
+    <script src="../js/nav.js"></script>
+    <script>
+        var url = "http://" + target + "/monitor/topo/link";
+        var cfg = "http://" + target + "/monitor/ping_cfg";
+
+        var dataNode = []
+        var dataLine = []
+        var dataLineAlive = []
+        var dataLineNoAlive = []
+        var grp_id = []
+        var map = echarts.init(document.getElementById("map"));
+        var mapWidth = document.body.clientWidth
+        //var mapHeight = document.body.clientHeight;
+        var interval
+        var myButton = ""
+        // '<button class="layui-btn layui-btn-normal btn active" style="margin:3px 10px 3px 10px;width:95px;" onclick=asd("") value="">全部</button>'
+
+        //document.querySelector("#map").style = "width:" + mapWidth + "px"
+        //document.querySelector("#map").style = "height:" + mapHeight + "px"
+        //点击时间传入id并且发送ajax
+        function asd(id) {
+            clearInterval(interval)
+            var aj = function (id) {
+                $.ajax({
+                    url: url + "?grp_id=" + id,
+                    success: function (response) {
+                        dataNode = []
+                        dataLine = []
+                        dataLineAlive = []
+                        dataLineNoAlive = []
+                        $.getJSON(cfg, function (cfg_data) {
+                            for (var i = 0; i < response.data.nodes.length; i++) {
+                                var data = {}
+                                data.name = response.data.nodes[i].name
+                                data.value = [response.data.nodes[i].longitude, response.data.nodes[
+                                    i].dimension]
+                                data.otherData = response.data.nodes[i]
+                                data.itemStyle = {
+                                    normal: {
+                                        color: "#14FFC8",
+                                        x: 0.5,
+                                        y: 0.5,
+                                        r: 0.5
+                                    }
+                                }
+                                dataNode.push(data)
+                            }
+                            for (var i = 0; i < response.data.lines.length; i++) {
+                                var data = {}
+                                var dataAlive = {}
+                                var dataNoAlive = {}
+                                //data.name = response.data.lines[i].hostname
+                                var data2 = [response.data.lines[i].node_coord_pair]
+                                data.coords = data2[0]
+                                data.otherData = response.data.lines[i]
+                                dataLine.push(data)
+                                grp_id.push(response.data.lines[i].grp_id)
+                                if (response.data.lines[i].alive === 1) {
+                                    //let data3 = [response.data.lines[i].node_coord_pair]
+                                    //dataAlive.coords = data3[0]
+                                    dataAlive.otherData = response.data.lines[i]
+                                    dataAlive.target = response.data.lines[i].target
+                                    dataAlive.source = response.data.lines[i].source
+                                    dataAlive.lineStyle = {
+                                        normal: {
+                                            color: "#14FFC8",
+                                            width: 2,
+                                            opacity: 0.8,
+                                            curveness: 0.05,
+                                        },
+                                        emphasis: {
+                                            color: "#14FFC8",
+                                            width: 3,
+                                            opacity: 1,
+                                            curveness: 0.05,
+                                        },
+                                    }
+                                    for (var j = 0; j < cfg_data.data.length; j++) {
+                                        if (response.data.lines[i].cfg_id == cfg_data.data[j].id) {
+                                            dataAlive.cfg = cfg_data.data[j]
+                                        }
+                                    }
+                                    dataLineAlive.push(dataAlive)
+                                } else {
+                                    //let data4 = [response.data.lines[i].node_coord_pair]
+                                    //dataNoAlive.coords = data4[0]
+                                    // dataNoAlive.otherData = response.data.lines[i]
+                                    // for (var j = 0; j < cfg_data.data.length; j++) {
+                                    //     if (response.data.lines[i].cfg_id == cfg_data.data[j].id) {
+                                    //         dataNoAlive.cfg = cfg_data.data[j]
+                                    //     }
+                                    // }
+                                    // dataLineNoAlive.push(dataNoAlive)
+                                    dataAlive.otherData = response.data.lines[i]
+                                    dataAlive.target = response.data.lines[i].target
+                                    dataAlive.source = response.data.lines[i].source
+                                    dataAlive.lineStyle = {
+                                        normal: {
+                                            color: "#FF4D34",
+                                            width: 2,
+                                            opacity: 0.8,
+                                            curveness: 0.05,
+                                        },
+                                        emphasis: {
+                                            color: "#FF4D34",
+                                            width: 3,
+                                            opacity: 1,
+                                            curveness: 0.05,
+                                        },
+                                    }
+                                    for (var j = 0; j < cfg_data.data.length; j++) {
+                                        if (response.data.lines[i].cfg_id == cfg_data.data[j].id) {
+                                            dataAlive.cfg = cfg_data.data[j]
+                                        }
+                                    }
+                                    dataLineAlive.push(dataAlive)
+                                }
+                            }
+                            renderMap(map);
+                        })
+                    },
+                });
+
+
+            }
+
+            aj(id)
+            //设置10秒刷新
+
+            interval = setInterval(function () {
+                aj(id)
+            }, 10000)
+        }
+        //进入页面时渲染一次确定button
+        $.ajax({
+            url: url,
+            beforeSend: function () {
+                $("#map").hide().after(
+                    '<img class="img"  id="load" src="../layui/images/5-121204193R0-50.gif"  />');
+            },
+            success: function (response) {
+                $.getJSON(cfg, function (cfg_data) {
+                    for (var i = 0; i < response.data.nodes.length; i++) {
+                        var data = {}
+                        data.name = response.data.nodes[i].name
+                        data.value = [response.data.nodes[i].longitude, response.data.nodes[
+                            i].dimension]
+                        data.otherData = response.data.nodes[i]
+                        data.itemStyle = {
+                            normal: {
+                                color: "#14FFC8",
+                                x: 0.5,
+                                y: 0.5,
+                                r: 0.5
+                            }
+                        }
+                        dataNode.push(data)
+                    }
+                    console.log(dataNode)
+                    for (var i = 0; i < response.data.lines.length; i++) {
+                        var data = {}
+                        var dataAlive = {}
+                        var dataNoAlive = {}
+                        var grpName = {}
+                        //data.name = response.data.lines[i].hostname
+                        var data2 = [response.data.lines[i].node_coord_pair]
+                        data.coords = data2[0]
+                        dataLine.push(data)
+                        grpName.grp_id = response.data.lines[i].grp_id
+                        grpName.grp_name = response.data.lines[i].grp_name
+                        grp_id.push(grpName)
+                    }
+                    //组id去重
+                    let grp_ids = Array.from(new Set(grp_id))
+                    var arr = grp_ids
+                    var hash = {};
+                    arr = arr.reduce(function (item, next) {
+                        hash[next.grp_id] ? '' : hash[next.grp_id] = true && item.push(
+                            next);
+                        return item
+                    }, [])
+                    console.log(dataLineNoAlive)
+                    $.each(arr, function (k, v) {
+                        myButton +=
+                            '<button class="layui-btn btn layui-btn-normal" style="margin:3px 10px 3px 10px;width:95px; " onclick=asd(' +
+                            v.grp_id + ') value="' + v.grp_id +
+                            '">' + v.grp_name + '</button>'
+                    });
+
+                    $("#button").append(myButton);
+                    asd(arr[0].grp_id);
+                    $("button").eq(0).addClass("active");
+                    $('#load').remove();
+                    $("#map").show();
+
+                    $("button").each(function (index) { //便利对象
+                        $(this).click(function () { //点击触发事件
+                            $("button").removeClass("active"); //删除当前元素的样式
+                            $("button").addClass("btn");
+                            $("button").eq(index).removeClass("btn");
+                            $("button").eq(index).addClass("active"); //添加当前元素的样式
+                        });
+                    });
+
+                })
+            },
+        });
+
+
+
+        echarts.registerMap('world', mapData);
+        //使用layui的layer弹出框
+        layui.use(['form', 'layedit', 'laydate'], function () {
+            var form = layui.form,
+                layer = layui.layer;
+            var clickTimeId
+
+            map.on('click', function (param) {
+                clearTimeout(clickTimeId);
+                //执行延时
+                clickTimeId = setTimeout(function () {
+                    console.log(param)
+                    //此处为单击事件要执行的代码
+                    if (param.componentType == "series" && param.dataType == "edge") {
+                        var topoid = param.data.otherData.id
+                        layui.layer.open({
+                            type: 2,
+                            title: '链路信息',
+                            offset: 'lb',
+                            maxmin: false, //开启最大化最小化按钮
+                            area: ['800px', '600px'],
+                            content: ['../html/clicktopo.html?' + topoid], //iframe的url，no代表不显示滚动条
+                            shadeClose: false,
+                            shade: 0,
+                            success: function (layero, index) {
+
+                            }
+                        });
+                    }
+                }, 250);
+
+            });
+            map.on('dblclick', function (param) {
+                console.log(param)
+                clearTimeout(clickTimeId);
+                if (param.componentType == "series" && param.dataType == "edge") {
+                    var topoid = param.data.otherData.id
+                    layui.layer.open({
+                        type: 2,
+                        title: '修改配置信息',
+                        offset: 'rb',
+                        maxmin: false, //开启最大化最小化按钮
+                        area: ['400px', '300px'],
+                        content: ['../html/mapDblClick.html?' + topoid],
+                        shadeClose: false,
+                        shade: 0,
+                        success: function (layero, index) {
+
+                        }
+                    });
+                }
+
+            });
+            map.on('click', function (param) {
+                if (param.componentType == "series" && param.dataType == "node") {
+                    var topoid = param.data.otherData.id
+                    console.log(topoid)
+                    layui.layer.open({
+                        type: 2,
+                        title: '图表',
+                        offset: 'lb',
+                        maxmin: false, //开启最大化最小化按钮
+                        area: ['1200px', '500px'],
+                        content: ['../html/topoPing.html?' + topoid],
+                        shadeClose: false,
+                        shade: 0,
+                        success: function (layero, index) {
+
+                        }
+                    });
+                    //clearTimeout(clickTimeId);
+                }
+
+            });
+        })
+        //延时执行函数asd，避免多次渲染map
+        //setTimeout(function(){asd("")},10000) 
+
+        var renderMap = function (el) {
+            let option = {
+                title: {
+                    text: "",
+                },
+                tooltip: {
+                    trigger: "item",
+                    formatter: function (params, ticket, callback) {
+                        if (params.dataType == "node") {
+                            console.log(params)
+                            return "设备：" + params.data.otherData.name;
+                        } else if (params.dataType == "edge") {
+                            if (params.data.otherData.alive == 0) {
+                                return "<span style='display:inline-block; width:10px; height:10px;background:#f60;border-radius:50%;'></span>" +
+                                    "模板名称：" + params.data.cfg.name + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#f60;border-radius:50%;'></span>" +
+                                    "模板ID：" + params.data.cfg.id + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#f60;border-radius:50%;'></span>" +
+                                    "检测周期：" + params.data.cfg.checksec + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#f60;border-radius:50%;'></span>" +
+                                    "平均时延：" + params.data.cfg.avgdelay + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#f60;border-radius:50%;'></span>" +
+                                    "丢包率：" + params.data.cfg.loss + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#f60;border-radius:50%;'></span>" +
+                                    "模板发生次数：" + params.data.cfg.num + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#f60;border-radius:50%;'></span>" +
+                                    "创建时间：" + params.data.cfg.create_at + "<br />"
+                            } else {
+                                return "<span style='display:inline-block; width:10px; height:10px;background:#0f0;border-radius:50%;'></span>" +
+                                    "模板名称：" + params.data.cfg.name + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#0f0;border-radius:50%;'></span>" +
+                                    "模板ID：" + params.data.cfg.id + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#0f0;border-radius:50%;'></span>" +
+                                    "检测周期：" + params.data.cfg.checksec + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#0f0;border-radius:50%;'></span>" +
+                                    "平均时延：" + params.data.cfg.avgdelay + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#0f0;border-radius:50%;'></span>" +
+                                    "丢包率：" + params.data.cfg.loss + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#0f0;border-radius:50%;'></span>" +
+                                    "模板发生次数：" + params.data.cfg.num + "<br />" +
+                                    "<span style='display:inline-block; width:10px; height:10px;background:#0f0;border-radius:50%;'></span>" +
+                                    "创建时间：" + params.data.cfg.create_at + "<br />"
+                            }
+                        } else {
+                            return params.name;
+                        }
+                    }
+                },
+                geo: {
+                    show: true,
+                    map: 'world',
+                    label: {
+                        emphasis: {
+                            show: false
+                        }
+                    },
+                    itemStyle: {
+                        areaColor: "#416291",
+                        borderColor: "#3b4a60",
+                        borderWidth: 1
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            areaColor: "#e9ecf7",
+                            borderColor: "#fff",
+                            borderWidth: 1
+                        }
+                    },
+                    silent: true,
+                    roam: true,
+                    layoutCenter: ['50%', '50%'],
+                    layoutSize: "220%",
+                    //zoom: 4,
+                    //center: [46, 36] //切换地图至中国中心经纬度
+                },
+                
+                series: [{
+                    type: 'graph',
+                    layout: 'circular',
+                    coordinateSystem: 'geo',
+                    symbolSize: 10,
+                    focusNodeAdjacency: true,
+                    roam: true,
+                    label: {
+                        normal: {
+                            show: true,
+                            position: "right",
+                        }
+                    },
+                    edgeSymbol: ["circle",'arrow'],
+                    edgeSymbolSize: [0,8],
+                    edgeLabel: {
+                        normal: {
+                            color: "#14FFC8",
+                            x: 0.5,
+                            y: 0.5,
+                            r: 0.5
+                        }
+
+                    },
+                    data: dataNode,
+                    links: dataLineAlive,
+                    lineStyle: {
+                        normal: {
+                            opacity: 0.9,
+                            width: 1,
+                            curveness: 0
+                        }
+                    }
+                }]
+
+            };
+
+            el.resize({
+                width: mapWidth,
+                height: (mapWidth / 16)*9
+            });
+            el.setOption(option);
+
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>大屏</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+</head>
+<link rel="stylesheet" href="../layui/css/public.css">
+<style>
+    .img {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .mybutton {
+        width: 100px;
+        height: 100px;
+        background: #0f0;
+        float: left
+    }
+
+    #map {
+        float: left;
+        height: 600px;
+    }
+    .active{
+        background: rgb(167, 201, 234)
+    }
+    /* body{
+        background: rgba(167, 201, 234)
+    }
+ */
+</style>
+
+<body>
+    <div style="text-align:center;padding-top:10px;">
+        <b>StartTime:</b>&nbsp;<input id="starttime" type='text' onClick="WdatePicker({dateFmt:'yyyy-MM-dd HH:mm'})"
+            style="width:120px;">
+        <b>EndTime:</b>&nbsp;<input id="endtime" type='text' onClick="WdatePicker({dateFmt:'yyyy-MM-dd HH:mm'})" style="width:120px;">
+        &nbsp;<input class="sgraph" type="button" value="Submit" />
+    </div>
+    <div id="main"></div>
+    <div class="modal-content">
+
+        <!-- <div class="modal-body" id="pannel-show" style="width: 800px;height:500px;">    </div> -->
+
+    </div><!-- /.modal-content -->
+    <script src="../layui/layui.js" charset="utf-8"></script>
+
+    <script src="../layui/echarts.min.js"></script>
+    <script src="../layui/world.js"></script>
+    <script src="../js/target.js"></script>
+    <script language="JavaScript" type="text/javascript" src="../layui/My97DatePicker/WdatePicker.js"></script>
+    <script src="../js/jquery-1.10.2.js"></script>
+    <script>
+        var topo = "http://" + target + "/monitor/topo/statics?host_id="
+        var a = location.href;
+        var s = a.indexOf("?");
+        var t = a.substring(s + 1); // t就是?后面的东西了 
+        var my = function(u,append) {
+            $.getJSON(u, function (result) {
+                console.log(result)
+
+                optmini = {
+                    title: {
+                        text: ''
+                    },
+                    legend: {
+                        data: ['maxDelay', 'avgDelay', 'minDelay', 'lossPk'],
+                        selected: {
+                            'maxDelay': false,
+                            'minDelay': false
+                        }
+                    },
+                    // toolbox: {
+                    //     feature: {
+                    //         dataView: {},
+                    //         saveAsImage: {
+                    //             pixelRatio: 2
+                    //         }
+                    //     }
+                    // },
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    xAxis: {
+                        data: []
+                    },
+                    dataZoom: [{}],
+                    yAxis: [{
+                        type: 'value',
+                        name: 'Delay',
+                        position: 'left'
+                    }, {
+                        type: 'value',
+                        name: 'Package(LOSS)',
+                        min: 0,
+                        max: 100,
+                        position: 'right',
+                        axisLabel: {
+                            formatter: '{value} %'
+                        }
+                    }],
+                    series: [{
+                            name: 'maxDelay',
+                            type: 'line',
+                            animation: false,
+                            areaStyle: {
+                                normal: {}
+                            },
+                            lineStyle: {
+                                normal: {
+                                    width: 0
+                                }
+                            },
+                            data: []
+                        },
+                        {
+                            name: 'minDelay',
+                            type: 'line',
+                            animation: false,
+                            areaStyle: {
+                                normal: {}
+                            },
+                            lineStyle: {
+                                normal: {
+                                    width: 0
+                                }
+                            },
+                            data: []
+                        },
+                        {
+                            name: 'avgDelay',
+                            type: 'line',
+                            data: [],
+                            itemStyle: {
+                                normal: {
+                                    color: '#00CC66'
+                                }
+                            },
+                            animation: false,
+                            areaStyle: {
+                                normal: {}
+                            },
+                            lineStyle: {
+                                normal: {
+                                    width: 0
+                                }
+                            }
+                        },
+                        {
+                            name: 'lossPk',
+                            type: 'line',
+                            yAxisIndex: 1,
+                            data: [],
+                            itemStyle: {
+                                normal: {
+                                    color: '#FF0000'
+                                }
+                            },
+                            animation: false,
+                            areaStyle: {
+                                normal: {}
+                            },
+                            lineStyle: {
+                                normal: {
+                                    width: 0
+                                }
+                            }
+                        }
+                    ]
+                }
+                $.each(result.data, function (i, field) {
+                    console.log(field)
+                    if(append){
+                        $("#main").append("<div id='" + i +
+                            "_pannel' style='float:left;width:32%;height:430px;margin-right:1%;margin-top:20px;'  ></div>"
+                        );
+                    }
+                    var chart = echarts.init(document.getElementById(i + "_pannel"));
+                    chart.setOption(optmini);
+                    chart.setOption({
+                        title: {
+                            text: i,
+                            //left:'center',
+                            x: 'center', // 水平安放位置，默认为左对齐，可选为：
+                            // 'center' ¦ 'left' ¦ 'right'
+                            // ¦ {number}（x坐标，单位px）
+                            y: "20px",
+                            textStyle: {
+                                'fontSize': 13
+                            }
+                        }
+                    });
+
+
+                    //$(".alerticon-" + i + "").remove();
+                    chart.setOption({
+                        xAxis: {
+                            data: field.lastcheck
+                        },
+                        series: [{
+                            name: 'avgDelay',
+                            data: field.avgdelay
+                        }, {
+                            name: 'lossPk',
+                            data: field.losspk
+                        }, {
+                            name: 'maxDelay',
+                            data: field.maxdelay
+                        }, {
+                            name: 'minDelay',
+                            data: field.mindelay
+                        }]
+                    });
+
+
+                });
+                // $("#main").on("click", ".showcharts", function () {
+                //     window.clearInterval(int)
+                //     var modalWidth = $("#charts").width();
+                //     var left = "-" + parseInt(modalWidth) / 2 + "px";
+                //     $('#charts').modal('show').css({
+                //         "margin-left": left
+                //     });
+                //     url = $(this).attr("apiurl");
+                //     $("#pannelurl").attr("value", url);
+
+                //     //var data = JSON.parse(data);
+                //     myChart.setOption({
+                //         xAxis: {
+                //             data: result.data.lastcheck
+                //         },
+                //         series: [{
+                //                 name: 'maxDelay',
+                //                 data: result.data.maxdelay
+                //             },
+                //             {
+                //                 name: 'minDelay',
+                //                 data: result.data.mindelay
+                //             },
+                //             {
+                //                 name: 'avgDelay',
+                //                 data: result.data.avgdelay
+                //             },
+                //             {
+                //                 name: 'lossPk',
+                //                 data: result.data.losspk
+                //             }
+                //         ]
+                //     });
+
+                // });
+            });
+
+        }
+        my(topo + t,true)
+        $(".sgraph").click(function () {
+            start = $("#starttime").val();
+            endtime = $("#endtime").val();
+            my(topo + t + "&start_time=" + start + "&end_time=" + endtime,false)
+        });
+    </script>
+</body>
+
+</html>

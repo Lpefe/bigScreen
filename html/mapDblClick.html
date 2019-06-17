@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>组</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+</head>
+<link rel="stylesheet" href="../layui/css/public.css">
+<style>
+
+</style>
+
+<body>
+    <!-- 点击添加弹出框 -->
+    <div id="ss">
+        <div class="rr">
+            <fieldset class="layui-elem-field layui-field-title" style="margin-top: 10px;">
+                <legend id="editText">修改模板</legend>
+            </fieldset>
+
+            <form class="layui-form" action="" lay-filter="example">
+
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">请选择模板</label>
+                    <div class="layui-input-block">
+                        <select id="selectGrp" name="cfg_id" lay-search="">
+                            <option value="">直接选择或搜索选择</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button id="submit1" class="layui-btn" lay-submit="" lay-filter="demo1">立即提交</button>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script src="../layui/layui.js" charset="utf-8"></script>
+    <script src="../layui/lay/jquery-1.10.2.js"></script>
+    <script src="../js/target.js"></script>
+    <script>
+        var ping_cfg = "http://" + target + "/monitor/ping_cfg"
+        var multi = "http://" + target + "/monitor/grp/multi"
+        var topo = "http://" + target + "/monitor/topo"
+        var ping_cfg = "http://" + target + "/monitor/ping_cfg"
+
+        var a = location.href;
+        var s = a.indexOf("?");
+        var t = a.substring(s + 1); // t就是?后面的东西了 
+        var selectcfg = ""
+        layui.use(['form', 'layedit', 'laydate'], function () {
+            var form = layui.form,
+                layer = layui.layer;
+
+            //监听提交增加
+            form.on('submit(demo1)', function (data) {
+                var userInfo = {
+                    "id": t,
+                    "cfg_id": data.field.cfg_id,
+                };
+                fetch(topo, {
+                    method: 'PUT',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(userInfo)
+                }).then(function (data) {
+                    data.json().then(data => {
+
+                        if (data.retcode === 0) {
+                            layer.msg("修改模板成功", {
+                                icon: 6, //成功的表情
+                                time: 1000 //1秒关闭（如果不配置，默认是3秒）
+                            })
+
+                        } else {
+                            layer.msg("修改模板失败" + data.desc, {
+                                icon: 5,
+                                time: 5000
+                            }); //失败的表情
+                        }
+                    })
+                })
+                return false; //阻止表单跳转
+            });
+
+            $.ajax({
+                url: ping_cfg,
+                success: function (response) {
+                    for (var i = 0; i < response.data.length; i++) {
+                        var data = {}
+                        data.name = response.data[i].name
+                        data.value = response.data[i].id
+                        selectcfg += "<option value=" + response.data[i].id + ">" + response.data[i]
+                            .name +
+                            "</option>"
+                    }
+                    $("#selectGrp").append(selectcfg)
+                    layui.form.render()
+                },
+            });
+        });
+    </script>
+</body>
+
+</html>

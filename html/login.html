@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <base id="base" href="${base}">
+    <meta charset="UTF-8">
+    <title>登录</title>
+    <link rel="stylesheet" type="text/css" href="../layui/login/css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="../layui/login/css/demo.css" />
+    <!--必要样式-->
+    <link rel="stylesheet" type="text/css" href="../layui/login/css/component.css" />
+    <link rel="Shortcut Icon" href="../layui/images/logo.png" />
+    <link rel="stylesheet" type="text/css" href="../layui/css/layui.css" />
+    <script type="text/javascript" src="../js/jquery-1.10.2.js"></script>
+    <script type="text/javascript" src="../layui/layui.js"></script>
+</head>
+<style>
+    /* input:-webkit-autofill { box-shadow: 0 0 0px 1000px rgb(73,92,114) inset !important;} */
+    :-webkit-autofill {
+  -webkit-text-fill-color: #fff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+</style>
+
+<body>
+    <div class="container demo-1">
+        <div class="content">
+            <div id="large-header" class="large-header">
+                <canvas id="demo-canvas"></canvas>
+                <div class="logo_box">
+                    <h3>SD-WAN 监控平台</h3>
+                    <form action="#" name="f" method="post">
+                        <div class="input_outer">
+                            <span class="u_user"></span>
+                            <input autocomplete="off" name="username" class="text" style="color: #FFFFFF !important"
+                                type="text" placeholder="请输入账户">
+                        </div>
+                        <div class="input_outer">
+                            <span class="us_uer"></span>
+                            <input autocomplete="off" name="password" class="text" style="color: #FFFFFF !important; position:absolute; z-index:100;"
+                                value="" type="password" placeholder="请输入密码">
+                        </div>
+                        <div class="mb2"><a id="sub" lay-filter="sub" class="act-but submit" href="javascript:;" style="color: #FFFFFF">登录</a></div>
+                        <div class="mb2"><a id="sub2" lay-filter="sub" class="act-but submit" href="./regist.html" style="color: #FFFFFF">注册</a></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div><!-- /container -->
+    <script src="../layui/login/js/TweenLite.min.js"></script>
+    <script src="../layui/login/js/EasePack.min.js"></script>
+    <script src="../layui/login/js/rAF.js"></script>
+    <script src="../layui/login/js/demo-1.js"></script>
+    <script src="../js/target.js"></script>
+
+</body>
+<script>
+    var logins = "http://" + target + "/monitor/login/"
+    //加载弹出层组件
+    layui.use('layer', function () {
+
+        var layer = layui.layer;
+
+        //登录的点击事件
+        $("#sub").on("click", function () {
+            login();
+        })
+
+        $("body").keydown(function () {
+            if (event.keyCode == "13") {
+                login();
+            }
+        })
+        //登录函数
+        function login() {
+            var username = $(" input[ name='username' ] ").val();
+            var password = $(" input[ name='password' ] ").val();
+            // $.ajax({
+            //     url: "login",
+            //     data: {
+            //         "username": username,
+            //         "password": password
+            //     },
+            //     type: "post",
+            //     dataType: "json",
+            //     success: function (data) {
+            //         if (data.success) {
+            //             window.location = "index";
+            //         } else {
+            //             layer.msg(data.msg);
+            //         }
+            //     }
+            // })
+
+            fetch(logins, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json;charset=utf-8',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    "username": username,
+                    "password": password
+                })
+            }).then(function (data) {
+                data.json().then(data => {
+                    if (data.success) {
+                        sessionStorage.setItem("username", username)
+                        window.location = "./index.html";
+                    } else {
+                        layer.msg(data.result, {
+                            icon: 5,
+                            time: 5000
+                        }); //失败的表情
+                    }
+                })
+            }).then(function () {
+                // setTimeout(function () {
+                //     location.reload()
+                // }, 1000)
+
+            })
+        }
+    })
+</script>
+
+</html>
